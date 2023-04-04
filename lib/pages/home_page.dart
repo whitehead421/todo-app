@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:todo_app/data/database.dart';
 import 'package:todo_app/utils/dialog_box.dart';
-
 import '../utils/todo_tile.dart';
+import 'package:provider/provider.dart';
+import 'package:todo_app/utils/theme_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,6 +17,7 @@ class _HomePageState extends State<HomePage> {
   // reference the hive box
   final _myBox = Hive.box('mybox');
   ToDoDatabase db = ToDoDatabase();
+  var index = 0;
 
   @override
   void initState() {
@@ -67,27 +69,92 @@ class _HomePageState extends State<HomePage> {
         });
   }
 
+  void _showSnackBar(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(text),
+    ));
+  }
+
   // delete a task
   void deleteTask(int index) {
     setState(() {
       db.toDoList.removeAt(index);
     });
+    _showSnackBar("Task Deleted");
+    db.updateDatabase();
+  }
+
+  // edit a task
+  void editTask(int index) {
+    _controller.text = db.toDoList[index][0];
+    showDialog(
+        context: context,
+        builder: (context) {
+          return DialogBox(
+            controller: _controller,
+            onSave: () {
+              setState(() {
+                db.toDoList[index][0] = _controller.text;
+              });
+              _controller.clear();
+              Navigator.of(context).pop();
+              db.updateDatabase();
+            },
+            onCancel: () => Navigator.of(context).pop(),
+          );
+        });
+  }
+
+  // change theme
+  void changeTheme() {
+    var colors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple
+    ];
+    setState(() {
+      index = (index + 1) % colors.length;
+    });
+    var theme = ThemeData(primarySwatch: colors[index]);
+    Provider.of<ThemeProvider>(context, listen: false).setTheme(theme);
+
     db.updateDatabase();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.purple[200],
+      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.7),
       appBar: AppBar(
-        title: const Center(child: Text('TO DO')),
-        elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: changeTheme,
+            icon: const Icon(Icons.color_lens),
+          ),
+        ],
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text('TO DO'),
+            SizedBox(
+              height: 5,
+            ),
+            Text('Track your tasks!', style: TextStyle(fontSize: 12)),
+          ],
+        ),
+        elevation: 10,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: createNewTask,
-        child: const Icon(Icons.note_add),
+        child: const Icon(Icons.add_task),
       ),
-      body: ListView.builder(
+      body: ListView.separated(
+        padding: const EdgeInsets.only(top: 10, bottom: 10),
+        separatorBuilder: (context, index) => const SizedBox(
+          height: 10,
+        ),
         itemCount: db.toDoList.length,
         itemBuilder: (context, index) {
           return ToDoTile(
@@ -97,6 +164,7 @@ class _HomePageState extends State<HomePage> {
               checkBoxChanged(value!, index);
             },
             deleteFunction: (context) => {deleteTask(index)},
+            editFunction: (context) => {editTask(index)},
           );
         },
       ),

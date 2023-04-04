@@ -6,6 +6,7 @@ class ToDoTile extends StatelessWidget {
   final bool taskCompleted;
   Function(bool?)? onChanged;
   Function(BuildContext)? deleteFunction;
+  Function(BuildContext)? editFunction;
 
   ToDoTile({
     super.key,
@@ -13,51 +14,55 @@ class ToDoTile extends StatelessWidget {
     required this.taskCompleted,
     required this.onChanged,
     required this.deleteFunction,
+    required this.editFunction,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        left: 25,
-        right: 25,
-        top: 25,
+    return Slidable(
+      endActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        children: [
+          SlidableAction(
+            onPressed: deleteFunction,
+            icon: Icons.delete,
+            backgroundColor: Colors.red.shade400,
+            label: "Delete",
+          ),
+        ],
       ),
-      child: Slidable(
-        endActionPane: ActionPane(
-          motion: ScrollMotion(),
-          children: [
-            SlidableAction(
-              onPressed: deleteFunction,
-              icon: Icons.delete,
-              backgroundColor: Colors.red.shade400,
-              borderRadius: BorderRadius.circular(12),
-            )
-          ],
+      startActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        children: [
+          SlidableAction(
+            onPressed: editFunction,
+            icon: Icons.edit,
+            backgroundColor: Colors.blue.shade400,
+            label: "Edit",
+          ),
+        ],
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).primaryColor,
         ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.purple[300],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Checkbox(
-                value: taskCompleted,
-                onChanged: onChanged,
-                activeColor: Colors.purple[700],
+        child: Row(
+          children: [
+            Checkbox(
+              value: taskCompleted,
+              onChanged: onChanged,
+              activeColor: Theme.of(context).primaryColorDark,
+            ),
+            Text(
+              taskName,
+              style: TextStyle(
+                decoration: taskCompleted
+                    ? TextDecoration.lineThrough
+                    : TextDecoration.none,
               ),
-              Text(
-                taskName,
-                style: TextStyle(
-                  decoration: taskCompleted
-                      ? TextDecoration.lineThrough
-                      : TextDecoration.none,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
